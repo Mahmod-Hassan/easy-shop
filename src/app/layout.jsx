@@ -1,5 +1,6 @@
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import Toaster from "@/components/Toaster";
 import Providers from "@/providers";
 import classNames from "@/utils/classNames";
 import { Roboto } from "next/font/google";
@@ -19,21 +20,17 @@ export const metadata = {
 const RootLayout = ({ children }) => {
   return (
     <html lang="en" data-theme="dark" className="transition-all">
-      <body
-        className={classNames(
-          roboto.variable,
-          "container mx-auto px-2 font-roboto lg:mx-10"
-        )}
-      >
+      <body className={classNames(roboto.variable, "mx-auto font-roboto")}>
         <Providers>
           <div className="flex min-h-screen flex-col justify-between">
             <div>
               <Navbar />
-              <main className="mt-5">{children}</main>
+              <main className="mt-5 mx-20">{children}</main>
             </div>
             <Footer />
           </div>
         </Providers>
+        <Toaster></Toaster>
       </body>
     </html>
   );
