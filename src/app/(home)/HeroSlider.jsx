@@ -1,4 +1,5 @@
 // Import Swiper styles
+"use client";
 import mainSlider from "@/data/mainSlider";
 import "swiper/css/bundle";
 import { Autoplay, EffectFade, Navigation } from "swiper/modules";

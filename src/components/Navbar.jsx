@@ -2,10 +2,12 @@
 
 import { afterLoginNavData, beforeLoginNavData } from "@/data/navData";
 import useAuth from "@/hooks/useAuth";
+import useCart from "@/hooks/useCart";
 import useTheme from "@/hooks/useTheme";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { startTransition, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import {
   HiMiniXMark,
@@ -21,10 +23,35 @@ const Navbar = () => {
   const [navToggle, setNavToggle] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const navData = user ? afterLoginNavData : beforeLoginNavData;
+  const { replace, refresh } = useRouter();
+  const path = usePathname();
+
+  const { cart } = useCart();
+  const total = useMemo(
+    () => cart.reduce((pre, cur) => cur.price * cur.quantity + pre, 0),
+    [cart]
+  );
 
   const handleLogout = async () => {
-    await logout();
-    toast.success("logout successfully");
+    const toastId = toast.loading("Loading...");
+    try {
+      await logout();
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+      await res.json();
+      toast.success("logout successfully");
+      if (path.includes("/dashboard") || path.includes("/profile")) {
+        replace(`/login?redirectUrl=${path}`);
+      }
+      toast.dismiss(toastId);
+      toast.success("Successfully logout!");
+      startTransition(() => {
+        refresh();
+      });
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
   return (
     <nav className="navbar sticky top-0 z-10 bg-slate-200 shadow-lg dark:bg-slate-900 px-5 mx-2 lg:mx-0 lg:px-20">
@@ -52,6 +79,8 @@ const Navbar = () => {
             </li>
           ))}
         </ul>
+
+        {/* all about cart and it's it dropdown */}
         <div className="dropdown-end dropdown lg:mr-2">
           {/* cart icon from daisy ui*/}
           <label tabIndex={0} className="btn-ghost btn-circle btn">
@@ -70,13 +99,16 @@ const Navbar = () => {
                   d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
+              <span className="badge badge-sm indicator-item bg-primary text-white dark:text-gray-300">
+                {cart.length}
+              </span>
             </div>
           </label>
           <div
             tabIndex={0}
             className="card dropdown-content card-compact mt-3 w-52 bg-base-100 shadow"
           >
-            {/* <div className="card-body">
+            <div className="card-body">
               <span className="text-lg font-bold">{cart.length} Items</span>
               <span className="text-info">Total: ${total.toFixed(2)}</span>
               <div className="card-actions">
@@ -86,9 +118,11 @@ const Navbar = () => {
                   </button>
                 </Link>
               </div>
-            </div> */}
+            </div>
           </div>
         </div>
+
+        {/*all about profile image and it's dropdown */}
         {uid && (
           <div className="dropdown-end dropdown">
             <label tabIndex={0} className="btn-ghost btn-circle avatar btn">
@@ -96,10 +130,7 @@ const Navbar = () => {
                 <Image
                   alt="user-logo"
                   title={displayName}
-                  src={
-                    photoURL ||
-                    "https://i.ibb.co/0QZCv5C/png-clipart-user-profile-computer-icons-login-user-avatars-monochrome-black.png"
-                  }
+                  src={photoURL || "https://i.ibb.co/dJnbzDL/profile-image.png"}
                   width={40}
                   height={40}
                   className="h-10 w-10 rounded-full"
@@ -110,9 +141,9 @@ const Navbar = () => {
               tabIndex={0}
               className="menu-compact dropdown-content menu rounded-box mt-3 w-52 bg-base-100 p-2 shadow"
             >
-              {/* <li className="mb-2 mt-1 text-center font-semibold">
-              {displayName}
-            </li> */}
+              <li className="mb-2 mt-1 text-center font-semibold">
+                {displayName}
+              </li>
               <div className="divider my-0"></div>
               <li className="mb-2">
                 <NavLink
@@ -134,6 +165,7 @@ const Navbar = () => {
             </ul>
           </div>
         )}
+
         {/* all about dark mod and light mode */}
         <label className="swap swap-rotate lg:ml-2">
           <input
